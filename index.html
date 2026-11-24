@@ -290,14 +290,16 @@
   </div>
 
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbx6wmogDwS1oYX_2jsipMGQBm1ylVTCDxvJT_fF69umKSgyfJlwnrRNDaq-BgYnOau4/exec';
+    const API_URL = 'https://google.com';
 
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
 
     function getCurrentUserLabel() {
-      const u = tg.initDataUnsafe?.user;
+      const u = tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
       if (!u) return 'Сотрудник';
       const fullName = [u.first_name, u.last_name].filter(Boolean).join(' ');
       return u.username ? `${fullName} (@${u.username})` : fullName;
@@ -317,27 +319,27 @@
     const DAYS_SHORT = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
 
     function showNotice(text) {
-      if (tg.showAlert) tg.showAlert(text);
+      if (tg && tg.showAlert) tg.showAlert(text);
       else alert(text);
     }
 
     async function loadData() {
       try {
-        const res = await fetch(API_URL);
+        const res = await fetch(API_URL, { redirect: 'follow' });
         const data = await res.json();
         state.equipment = data.equipment || [];
         state.bookings = data.bookings || [];
         populateSelect();
         renderCalendar();
       } catch (e) {
-        document.getElementById('appContent').innerText = 'Ошибка загрузки данных. Проверьте API_URL.';
+        document.getElementById('appContent').innerText = 'Ошибка загрузки: ' + e.message;
       }
     }
 
     function populateSelect() {
       const select = document.getElementById('techSelect');
       select.innerHTML = state.equipment.map(eq =>
-        `<option value="${eq.id}">${eq.name} (${eq.plate})</option>`
+        `<option value="${eq.id}">${eq.name} ${eq.plate ? '(' + eq.plate + ')' : ''}</option>`
       ).join('');
     }
 
@@ -364,9 +366,3 @@
         const dateStr = toYMD(dateObj);
         const dayOfWeek = dateObj.getDay();
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-        const isToday = dateStr === todayStr;
-
-        html += `<th class="day-header ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''}">
-          <div>${d}</div>
-          <div style="font-weight:400;opacity:0.7">${DAYS_SHORT[dayOfWeek]}</div>
-        </th>`;
