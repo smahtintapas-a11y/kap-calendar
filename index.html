@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Загрузка техники КЭП</title>
+  <script src="https://telegram.org"></script>
+  <style>
+    :root { --bg: var(--tg-theme-bg-color, #fff); --sec: var(--tg-theme-secondary-bg-color, #f4f4f5); --txt: var(--tg-theme-text-color, #18181b); --hint: var(--tg-theme-hint-color, #71717a); --btn: var(--tg-theme-button-color, #2563eb); --btxt: var(--tg-theme-button-text-color, #fff); --brd: rgba(128,128,128,.2); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--txt); font-size: 14px; }
+    .top { position: sticky; top: 0; z-index: 30; background: var(--bg); padding: 10px 14px; border-bottom: 1px solid var(--brd); display: flex; justify-content: space-between; align-items: center; }
+    .nav { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+    .nbtn { background: var(--sec); color: var(--txt); border: 1px solid var(--brd); border-radius: 8px; width: 32px; height: 32px; font-size: 16px; cursor: pointer; }
+    .abtn { background: var(--btn); color: var(--btxt); border: none; border-radius: 8px; padding: 8px 12px; font-weight: 600; cursor: pointer; }
+    .wrap { width: 100%; overflow-x: auto; }
+    table { border-collapse: separate; border-spacing: 0; width: max-content; }
+    th, td { border-right: 1px solid var(--brd); border-bottom: 1px solid var(--brd); text-align: center; height: 46px; }
+    .st { position: sticky; left: 0; z-index: 20; background: var(--bg); min-width: 140px; max-width: 140px; text-align: left; padding: 4px 8px; border-right: 2px solid var(--brd); }
+    thead th.st { z-index: 25; background: var(--sec); }
+    .tname { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tplate { font-size: 11px; color: var(--hint); }
+    .dh { min-width: 36px; background: var(--sec); font-size: 11px; padding: 2px; }
+    .wk { color: #ef4444; }
+    .tdy { background: rgba(37,99,235,.12); }
+    .dc { min-width: 36px; padding: 3px; }
+    .busy { background: #ef4444; color: #fff; border-radius: 6px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; }
+    .free { width: 100%; height: 100%; cursor: pointer; }
+    .msg { text-align: center; padding: 30px 16px; color: var(--hint); }
+    .ov { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 50; align-items: flex-end; }
+    .ov.on { display: flex; }
+    .md { background: var(--bg); width: 100%; border-radius: 16px 16px 0 0; padding: 18px 16px 26px; display: flex; flex-direction: column; gap: 10px; }
+    .fg { display: flex; flex-direction: column; gap: 4px; }
+    .fg label { font-size: 12px; color: var(--hint); }
+    .fg input, .fg select { background: var(--sec); color: var(--txt); border: 1px solid var(--brd); border-radius: 8px; padding: 10px; font-size: 14px; width: 100%; }
+    .ir { background: var(--sec); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+    .acts { display: flex; gap: 8px; margin-top: 6px; }
+    .acts button { flex: 1; padding: 12px; border-radius: 10px; font-weight: 600; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <div class="nav">
+      <button class="nbtn" id="pM">‹</button>
+      <span id="mL">Календарь</span>
+      <button class="nbtn" id="nM">›</button>
+    </div>
+    <button class="abtn" id="oB">+ Бронь</button>
+  </div>
+  <div id="box" class="msg">Загрузка данных из Google...</div>
+
+  <div class="ov" id="bM"><div class="md">
+    <h3>Новая бронь</h3>
+    <div class="fg"><label>Техника</label><select id="tS"></select></div>
+    <div class="fg"><label>Начало</label><input type="date" id="sD"></div>
+    <div class="fg"><label>Окончание</label><input type="date" id="eD"></div>
+    <div class="fg"><label>Объект</label><input type="text" id="tI" placeholder="Например: Объект Лебяжий"></div>
+    <div class="acts">
+      <button style="background:var(--sec);color:var(--txt)" onclick="cM('bM')">Отмена</button>
+      <button style="background:var(--btn);color:var(--btxt)" id="svB">Сохранить</button>
+    </div>
+  </div></div>
+
+  <div class="ov" id="iM"><div class="md">
+    <h3 id="iT">Бронь</h3>
+    <div class="ir">
+      <div><b>Объект:</b> <span id="iO"></span></div>
+      <div><b>Период:</b> <span id="iP"></span></div>
+      <div><b>Автор:</b> <span id="iA"></span></div>
+    </div>
+    <div class="acts">
+      <button style="background:var(--sec);color:var(--txt)" onclick="cM('iM')">Закрыть</button>
+      <button style="background:#ef4444;color:#fff" id="dlB">Удалить</button>
+    </div>
+  </div></div>
+
+  <script>
+    const API = 'https://google.com';
+    const tg = window.Telegram && window.Telegram.WebApp;
+    if (tg) { tg.ready(); tg.expand(); }
+    let st = { eq: [], bk: [], dt: new Date(), id: null };
+    const M = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    const D = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+    const cM = id => document.getElementById(id).classList.remove('on');
+    const msg = t => (tg && tg.showAlert) ? tg.showAlert(t) : alert(t);
+    const ymd = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+    async function load() {
+      const box = document.getElementById('box');
+      box.className = 'msg';
+      box.innerText = 'Загрузка данных из Google...';
+      try {
+        const r = await fetch(API);
+        const data = await r.json();
+        st.eq = data.equipment || [];
+        st.bk = data.bookings || [];
+        document.getElementById('tS').innerHTML = st.eq.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+        draw();
+      } catch (e) {
+        box.innerHTML = `Ошибка загрузки: ${e.message}<br><br><button class="abtn" onclick="load()">Повторить</button>`;
+      }
+    }
+
+    function draw() {
+      const y = st.dt.getFullYear(), m = st.dt.getMonth(), days = new Date(y, m + 1, 0).getDate(), tdy = ymd(new Date());
+      document.getElementById('mL').innerText = `${M[m]} ${y}`;
+      let h = '<div class="wrap"><table><thead><tr><th class="st">Техника</th>';
+      for (let d = 1; d <= days; d++) {
+        const o = new Date(y, m, d), s = ymd(o), w = o.getDay();
+        h += `<th class="dh ${w===0||w===6?'wk':''} ${s===tdy?'tdy':''}"><div>${d}</div><div style="opacity:.6">${D[w]}</div></th>`;
+      }
+      h += '</tr></thead><tbody>';
+      st.eq.forEach(e => {
+        h += `<tr><td class="st"><div class="tname">${e.name}</div><div class="tplate">${e.plate||''}</div></td>`;
+        for (let d = 1; d <= days; d++) {
+          const s = ymd(new Date(y, m, d)), b = st.bk.find(x => x.techId === e.id && s >= x.start && s <= x.end);
+          h += b ? `<td class="dc ${s===tdy?'tdy':''}"><div class="busy" onclick="info('${b.id}')">●</div></td>`
+                 : `<td class="dc ${s===tdy?'tdy':''}"><div class="free" onclick="qB('${e.id}','${s}')"></div></td>`;
+        }
+        h += '</tr>';
+      });
+      document.getElementById('box').className = '';
+      document.getElementById('box').innerHTML = h + '</tbody></table></div>';
+    }
+
+    window.info = id => {
+      const b = st.bk.find(x => x.id === id); if (!b) return;
+      const e = st.eq.find(x => x.id === b.techId);
+      st.id = b.id;
+      document.getElementById('iT').innerText = e ? e.name : 'Бронь';
+      document.getElementById('iO').innerText = b.title;
+      document.getElementById('iP').innerText = `${b.start} — ${b.end}`;
+      document.getElementById('iA').innerText = b.author;
+      document.getElementById('iM').classList.add('on');
+    };
+
+    window.qB = (tid, s) => {
+      document.getElementById('tS').value = tid;
+      document.getElementById('sD').value = s;
+      document.getElementById('eD').value = s;
+      document.getElementById('tI').value = '';
+      document.getElementById('bM').classList.add('on');
+    };
+
+    document.getElementById('pM').onclick = () => { st.dt.setMonth(st.dt.getMonth() - 1); draw(); };
+    document.getElementById('nM').onclick = () => { st.dt.setMonth(st.dt.getMonth() + 1); draw(); };
+    document.getElementById('oB').onclick = () => qB((st.eq[0] && st.eq[0].id) || '', ymd(new Date()));
+
+    document.getElementById('svB').onclick = async () => {
+      const techId = document.getElementById('tS').value, start = document.getElementById('sD').value, end = document.getElementById('eD').value;
+      const title = document.getElementById('tI').value.trim() || 'Без названия';
+      const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+      const author = u ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : 'Сотрудник';
+      if (!start || !end || end < start) return msg('Проверьте даты');
+      const b = document.getElementById('svB'); b.disabled = true; b.innerText = '...';
+      try {
+        const r = await fetch(API, { method: 'POST', body: JSON.stringify({ action: 'add', techId, start, end, title, author }) });
+        const res = await r.json();
+        if (res.status === 'ok') { cM('bM'); await load(); } else msg(res.message || 'Ошибка');
+      } catch (e) { msg('Ошибка сети'); }
+      b.disabled = false; b.innerText = 'Сохранить';
+    };
+
+    document.getElementById('dlB').onclick = async () => {
+      const b = document.getElementById('dlB'); b.disabled = true; b.innerText = '...';
+      try {
+        const r = await fetch(API, { method: 'POST', body: JSON.stringify({ action: 'delete', bookingId: st.id }) });
+        const res = await r.json();
