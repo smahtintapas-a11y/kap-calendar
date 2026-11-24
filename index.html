@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Загрузка техники КЭП</title>
+  <script src="https://telegram.org"></script>
+  <style>
+    :root {
+      --bg: var(--tg-theme-bg-color, #ffffff);
+      --secondary-bg: var(--tg-theme-secondary-bg-color, #f4f4f5);
+      --text: var(--tg-theme-text-color, #18181b);
+      --hint: var(--tg-theme-hint-color, #71717a);
+      --btn: var(--tg-theme-button-color, #2563eb);
+      --btn-text: var(--tg-theme-button-text-color, #ffffff);
+      --border: rgba(128, 128, 128, 0.2);
+      --busy-color: #ef4444;
+      --today-bg: rgba(37, 99, 235, 0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      overflow-x: hidden;
+    }
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: var(--bg);
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .nav-btn {
+      background: var(--secondary-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 32px;
+      height: 32px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .add-btn {
+      background: var(--btn);
+      color: var(--btn-text);
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .timeline-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      position: relative;
+    }
+
+    table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: max-content;
+    }
+
+    th, td {
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+      height: 48px;
+    }
+
+    .sticky-col {
+      position: sticky;
+      left: 0;
+      z-index: 20;
+      background: var(--bg);
+      min-width: 145px;
+      max-width: 145px;
+      text-align: left;
+      padding: 6px 10px;
+      border-right: 2px solid var(--border);
+    }
+
+    thead th.sticky-col {
+      z-index: 25;
+      background: var(--secondary-bg);
+    }
+
+    .tech-name {
+      font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tech-plate {
+      font-size: 11px;
+      color: var(--hint);
+      margin-top: 2px;
+    }
+
+    .day-header {
+      min-width: 38px;
+      background: var(--secondary-bg);
+      font-size: 11px;
+      padding: 4px 2px;
+    }
+
+    .day-header.weekend { color: #ef4444; }
+    .day-header.today { background: var(--today-bg); font-weight: 700; }
+
+    .day-cell {
+      min-width: 38px;
+      padding: 3px;
+      position: relative;
+    }
+
+    .day-cell.today { background: var(--today-bg); }
+
+    .busy-block {
+      background: var(--busy-color);
+      color: #fff;
+      border-radius: 6px;
+      height: 100%;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .free-slot {
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+    .free-slot:active { background: var(--secondary-bg); border-radius: 6px; }
+
+    .loader {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--hint);
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 50;
+      align-items: flex-end;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: var(--bg);
+      width: 100%;
+      border-radius: 16px 16px 0 0;
+      padding: 20px 16px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .modal h3 { font-size: 16px; margin-bottom: 4px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 12px; color: var(--hint); }
+    .form-group input, .form-group select {
+      background: var(--secondary-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 14px;
+      width: 100%;
+    }
+
+    .info-row {
+      background: var(--secondary-bg);
+      padding: 10px 12px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .modal-actions button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-cancel { background: var(--secondary-bg); color: var(--text); }
+    .btn-save { background: var(--btn); color: var(--btn-text); }
+    .btn-delete { background: #ef4444; color: #ffffff; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="month-nav">
+      <button class="nav-btn" id="prevMonth">‹</button>
+      <span id="monthLabel">Загрузка...</span>
+      <button class="nav-btn" id="nextMonth">›</button>
+    </div>
+    <button class="add-btn" id="openModalBtn">+ Бронь</button>
+  </div>
+
+  <div id="appContent" class="loader">Загружаем график техники...</div>
+
+  <div class="modal-overlay" id="bookingModal">
+    <div class="modal">
+      <h3>Новая бронь техники</h3>
+      <div class="form-group">
+        <label>Техника</label>
+        <select id="techSelect"></select>
+      </div>
+      <div class="form-group">
+        <label>Дата начала</label>
+        <input type="date" id="startDateInput">
+      </div>
+      <div class="form-group">
+        <label>Дата окончания</label>
+        <input type="date" id="endDateInput">
+      </div>
+      <div class="form-group">
+        <label>Объект / Заказчик</label>
+        <input type="text" id="titleInput" placeholder="Например: Объект Лебяжий">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="closeModalBtn">Отмена</button>
+        <button class="btn-save" id="saveBookingBtn">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="infoModal">
+    <div class="modal">
+      <h3 id="infoTechName">Информация о брони</h3>
+      <div class="info-row">
+        <div><strong>Объект:</strong> <span id="infoTitle"></span></div>
+        <div><strong>Период:</strong> <span id="infoPeriod"></span></div>
+        <div><strong>Забронировал:</strong> <span id="infoAuthor"></span></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="closeInfoBtn">Закрыть</button>
+        <button class="btn-delete" id="deleteBookingBtn">Удалить бронь</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbx6wmogDwS1oYX_2jsipMGQBm1ylVTCDxvJT_fF69umKSgyfJlwnrRNDaq-BgYnOau4/exec';
+
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    function getCurrentUserLabel() {
+      const u = tg.initDataUnsafe?.user;
+      if (!u) return 'Сотрудник';
+      const fullName = [u.first_name, u.last_name].filter(Boolean).join(' ');
+      return u.username ? `${fullName} (@${u.username})` : fullName;
+    }
+
+    let state = {
+      equipment: [],
+      bookings: [],
+      currentDate: new Date(),
+      selectedBookingId: null
+    };
+
+    const MONTHS_RU = [
+      'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+      'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+    ];
+    const DAYS_SHORT = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+
+    function showNotice(text) {
+      if (tg.showAlert) tg.showAlert(text);
+      else alert(text);
+    }
+
+    async function loadData() {
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        state.equipment = data.equipment || [];
+        state.bookings = data.bookings || [];
+        populateSelect();
+        renderCalendar();
+      } catch (e) {
+        document.getElementById('appContent').innerText = 'Ошибка загрузки данных. Проверьте API_URL.';
+      }
+    }
+
+    function populateSelect() {
+      const select = document.getElementById('techSelect');
+      select.innerHTML = state.equipment.map(eq =>
+        `<option value="${eq.id}">${eq.name} (${eq.plate})</option>`
+      ).join('');
+    }
+
+    function toYMD(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function renderCalendar() {
+      const year = state.currentDate.getFullYear();
+      const month = state.currentDate.getMonth();
+      document.getElementById('monthLabel').innerText = `${MONTHS_RU[month]} ${year}`;
+
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const todayStr = toYMD(new Date());
+
+      let html = '<div class="timeline-wrapper"><table><thead><tr>';
+      html += '<th class="sticky-col">Техника</th>';
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateObj = new Date(year, month, d);
+        const dateStr = toYMD(dateObj);
+        const dayOfWeek = dateObj.getDay();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        const isToday = dateStr === todayStr;
+
+        html += `<th class="day-header ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''}">
+          <div>${d}</div>
+          <div style="font-weight:400;opacity:0.7">${DAYS_SHORT[dayOfWeek]}</div>
+        </th>`;
