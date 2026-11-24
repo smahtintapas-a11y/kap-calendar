@@ -6,363 +6,164 @@
   <title>Загрузка техники КЭП</title>
   <script src="https://telegram.org"></script>
   <style>
-    :root {
-      --bg: var(--tg-theme-bg-color, #ffffff);
-      --secondary-bg: var(--tg-theme-secondary-bg-color, #f4f4f5);
-      --text: var(--tg-theme-text-color, #18181b);
-      --hint: var(--tg-theme-hint-color, #71717a);
-      --btn: var(--tg-theme-button-color, #2563eb);
-      --btn-text: var(--tg-theme-button-text-color, #ffffff);
-      --border: rgba(128, 128, 128, 0.2);
-      --busy-color: #ef4444;
-      --today-bg: rgba(37, 99, 235, 0.12);
-    }
-
+    :root { --bg: var(--tg-theme-bg-color, #fff); --sec: var(--tg-theme-secondary-bg-color, #f4f4f5); --txt: var(--tg-theme-text-color, #18181b); --hint: var(--tg-theme-hint-color, #71717a); --btn: var(--tg-theme-button-color, #2563eb); --btxt: var(--tg-theme-button-text-color, #fff); --brd: rgba(128,128,128,.2); }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      font-size: 14px;
-      overflow-x: hidden;
-    }
-
-    .header {
-      position: sticky;
-      top: 0;
-      z-index: 30;
-      background: var(--bg);
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .month-nav {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 600;
-      font-size: 15px;
-    }
-
-    .nav-btn {
-      background: var(--secondary-bg);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      width: 32px;
-      height: 32px;
-      font-size: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .add-btn {
-      background: var(--btn);
-      color: var(--btn-text);
-      border: none;
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-weight: 600;
-      font-size: 13px;
-      cursor: pointer;
-    }
-
-    .timeline-wrapper {
-      width: 100%;
-      overflow-x: auto;
-      position: relative;
-    }
-
-    table {
-      border-collapse: separate;
-      border-spacing: 0;
-      width: max-content;
-    }
-
-    th, td {
-      border-right: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      text-align: center;
-      height: 48px;
-    }
-
-    .sticky-col {
-      position: sticky;
-      left: 0;
-      z-index: 20;
-      background: var(--bg);
-      min-width: 145px;
-      max-width: 145px;
-      text-align: left;
-      padding: 6px 10px;
-      border-right: 2px solid var(--border);
-    }
-
-    thead th.sticky-col {
-      z-index: 25;
-      background: var(--secondary-bg);
-    }
-
-    .tech-name {
-      font-weight: 600;
-      font-size: 13px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .tech-plate {
-      font-size: 11px;
-      color: var(--hint);
-      margin-top: 2px;
-    }
-
-    .day-header {
-      min-width: 38px;
-      background: var(--secondary-bg);
-      font-size: 11px;
-      padding: 4px 2px;
-    }
-
-    .day-header.weekend { color: #ef4444; }
-    .day-header.today { background: var(--today-bg); font-weight: 700; }
-
-    .day-cell {
-      min-width: 38px;
-      padding: 3px;
-      position: relative;
-    }
-
-    .day-cell.today { background: var(--today-bg); }
-
-    .busy-block {
-      background: var(--busy-color);
-      color: #fff;
-      border-radius: 6px;
-      height: 100%;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .free-slot {
-      width: 100%;
-      height: 100%;
-      cursor: pointer;
-    }
-    .free-slot:active { background: var(--secondary-bg); border-radius: 6px; }
-
-    .loader {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--hint);
-    }
-
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 50;
-      align-items: flex-end;
-    }
-
-    .modal-overlay.active { display: flex; }
-
-    .modal {
-      background: var(--bg);
-      width: 100%;
-      border-radius: 16px 16px 0 0;
-      padding: 20px 16px 28px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .modal h3 { font-size: 16px; margin-bottom: 4px; }
-
-    .form-group { display: flex; flex-direction: column; gap: 4px; }
-    .form-group label { font-size: 12px; color: var(--hint); }
-    .form-group input, .form-group select {
-      background: var(--secondary-bg);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px;
-      font-size: 14px;
-      width: 100%;
-    }
-
-    .info-row {
-      background: var(--secondary-bg);
-      padding: 10px 12px;
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 13px;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-    .modal-actions button {
-      flex: 1;
-      padding: 12px;
-      border-radius: 10px;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      border: none;
-    }
-
-    .btn-cancel { background: var(--secondary-bg); color: var(--text); }
-    .btn-save { background: var(--btn); color: var(--btn-text); }
-    .btn-delete { background: #ef4444; color: #ffffff; }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--txt); font-size: 14px; }
+    .top { position: sticky; top: 0; z-index: 30; background: var(--bg); padding: 10px 14px; border-bottom: 1px solid var(--brd); display: flex; justify-content: space-between; align-items: center; }
+    .nav { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+    .nbtn { background: var(--sec); color: var(--txt); border: 1px solid var(--brd); border-radius: 8px; width: 32px; height: 32px; font-size: 16px; cursor: pointer; }
+    .abtn { background: var(--btn); color: var(--btxt); border: none; border-radius: 8px; padding: 8px 12px; font-weight: 600; cursor: pointer; }
+    .wrap { width: 100%; overflow-x: auto; }
+    table { border-collapse: separate; border-spacing: 0; width: max-content; }
+    th, td { border-right: 1px solid var(--brd); border-bottom: 1px solid var(--brd); text-align: center; height: 46px; }
+    .st { position: sticky; left: 0; z-index: 20; background: var(--bg); min-width: 140px; max-width: 140px; text-align: left; padding: 4px 8px; border-right: 2px solid var(--brd); }
+    thead th.st { z-index: 25; background: var(--sec); }
+    .tname { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tplate { font-size: 11px; color: var(--hint); }
+    .dh { min-width: 36px; background: var(--sec); font-size: 11px; padding: 2px; }
+    .wk { color: #ef4444; }
+    .tdy { background: rgba(37,99,235,.12); }
+    .dc { min-width: 36px; padding: 3px; }
+    .busy { background: #ef4444; color: #fff; border-radius: 6px; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; }
+    .free { width: 100%; height: 100%; cursor: pointer; }
+    .msg { text-align: center; padding: 30px 16px; color: var(--hint); }
+    .ov { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 50; align-items: flex-end; }
+    .ov.on { display: flex; }
+    .md { background: var(--bg); width: 100%; border-radius: 16px 16px 0 0; padding: 18px 16px 26px; display: flex; flex-direction: column; gap: 10px; }
+    .fg { display: flex; flex-direction: column; gap: 4px; }
+    .fg label { font-size: 12px; color: var(--hint); }
+    .fg input, .fg select { background: var(--sec); color: var(--txt); border: 1px solid var(--brd); border-radius: 8px; padding: 10px; font-size: 14px; width: 100%; }
+    .ir { background: var(--sec); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+    .acts { display: flex; gap: 8px; margin-top: 6px; }
+    .acts button { flex: 1; padding: 12px; border-radius: 10px; font-weight: 600; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
-
-  <div class="header">
-    <div class="month-nav">
-      <button class="nav-btn" id="prevMonth">‹</button>
-      <span id="monthLabel">Загрузка...</span>
-      <button class="nav-btn" id="nextMonth">›</button>
+  <div class="top">
+    <div class="nav">
+      <button class="nbtn" id="pM">‹</button>
+      <span id="mL">Календарь</span>
+      <button class="nbtn" id="nM">›</button>
     </div>
-    <button class="add-btn" id="openModalBtn">+ Бронь</button>
+    <button class="abtn" id="oB">+ Бронь</button>
   </div>
+  <div id="box" class="msg">Подключаемся к таблице...</div>
 
-  <div id="appContent" class="loader">Загружаем график техники...</div>
-
-  <div class="modal-overlay" id="bookingModal">
-    <div class="modal">
-      <h3>Новая бронь техники</h3>
-      <div class="form-group">
-        <label>Техника</label>
-        <select id="techSelect"></select>
-      </div>
-      <div class="form-group">
-        <label>Дата начала</label>
-        <input type="date" id="startDateInput">
-      </div>
-      <div class="form-group">
-        <label>Дата окончания</label>
-        <input type="date" id="endDateInput">
-      </div>
-      <div class="form-group">
-        <label>Объект / Заказчик</label>
-        <input type="text" id="titleInput" placeholder="Например: Объект Лебяжий">
-      </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" id="closeModalBtn">Отмена</button>
-        <button class="btn-save" id="saveBookingBtn">Сохранить</button>
-      </div>
+  <div class="ov" id="bM"><div class="md">
+    <h3>Новая бронь</h3>
+    <div class="fg"><label>Техника</label><select id="tS"></select></div>
+    <div class="fg"><label>Начало</label><input type="date" id="sD"></div>
+    <div class="fg"><label>Окончание</label><input type="date" id="eD"></div>
+    <div class="fg"><label>Объект</label><input type="text" id="tI" placeholder="Например: Объект Лебяжий"></div>
+    <div class="acts">
+      <button style="background:var(--sec);color:var(--txt)" onclick="cM('bM')">Отмена</button>
+      <button style="background:var(--btn);color:var(--btxt)" id="svB">Сохранить</button>
     </div>
-  </div>
+  </div></div>
 
-  <div class="modal-overlay" id="infoModal">
-    <div class="modal">
-      <h3 id="infoTechName">Информация о брони</h3>
-      <div class="info-row">
-        <div><strong>Объект:</strong> <span id="infoTitle"></span></div>
-        <div><strong>Период:</strong> <span id="infoPeriod"></span></div>
-        <div><strong>Забронировал:</strong> <span id="infoAuthor"></span></div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" id="closeInfoBtn">Закрыть</button>
-        <button class="btn-delete" id="deleteBookingBtn">Удалить бронь</button>
-      </div>
+  <div class="ov" id="iM"><div class="md">
+    <h3 id="iT">Бронь</h3>
+    <div class="ir">
+      <div><b>Объект:</b> <span id="iO"></span></div>
+      <div><b>Период:</b> <span id="iP"></span></div>
+      <div><b>Автор:</b> <span id="iA"></span></div>
     </div>
-  </div>
+    <div class="acts">
+      <button style="background:var(--sec);color:var(--txt)" onclick="cM('iM')">Закрыть</button>
+      <button style="background:#ef4444;color:#fff" id="dlB">Удалить</button>
+    </div>
+  </div></div>
 
   <script>
-    const API_URL = 'https://google.com';
+    const API = 'https://google.com';
+    const tg = window.Telegram && window.Telegram.WebApp;
+    if (tg) { tg.ready(); tg.expand(); }
+    let st = { eq: [], bk: [], dt: new Date(), id: null };
+    const M = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    const D = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+    const cM = id => document.getElementById(id).classList.remove('on');
+    const msg = t => (tg && tg.showAlert) ? tg.showAlert(t) : alert(t);
+    const ymd = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
-    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-    if (tg) {
-      tg.ready();
-      tg.expand();
-    }
-
-    function getCurrentUserLabel() {
-      const u = tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
-      if (!u) return 'Сотрудник';
-      const fullName = [u.first_name, u.last_name].filter(Boolean).join(' ');
-      return u.username ? `${fullName} (@${u.username})` : fullName;
-    }
-
-    let state = {
-      equipment: [],
-      bookings: [],
-      currentDate: new Date(),
-      selectedBookingId: null
-    };
-
-    const MONTHS_RU = [
-      'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-      'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
-    ];
-    const DAYS_SHORT = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-
-    function showNotice(text) {
-      if (tg && tg.showAlert) tg.showAlert(text);
-      else alert(text);
-    }
-
-    async function loadData() {
+    async function load() {
+      const box = document.getElementById('box');
+      box.className = 'msg';
+      box.innerText = 'Загрузка данных из Google...';
+      const ctrl = new AbortController();
+      const tmr = setTimeout(() => ctrl.abort(), 10000);
       try {
-        const res = await fetch(API_URL, { redirect: 'follow' });
-        const data = await res.json();
-        state.equipment = data.equipment || [];
-        state.bookings = data.bookings || [];
-        populateSelect();
-        renderCalendar();
+        const r = await fetch(API, { signal: ctrl.signal });
+        clearTimeout(tmr);
+        const data = await r.json();
+        st.eq = data.equipment || [];
+        st.bk = data.bookings || [];
+        document.getElementById('tS').innerHTML = st.eq.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+        draw();
       } catch (e) {
-        document.getElementById('appContent').innerText = 'Ошибка загрузки: ' + e.message;
+        clearTimeout(tmr);
+        box.innerHTML = `Не удалось загрузить: ${e.name === 'AbortError' ? 'превышено время ожидания (10 сек)' : e.message}<br><br><button class="abtn" onclick="load()">Повторить</button>`;
       }
     }
 
-    function populateSelect() {
-      const select = document.getElementById('techSelect');
-      select.innerHTML = state.equipment.map(eq =>
-        `<option value="${eq.id}">${eq.name} ${eq.plate ? '(' + eq.plate + ')' : ''}</option>`
-      ).join('');
+    function draw() {
+      const y = st.dt.getFullYear(), m = st.dt.getMonth(), days = new Date(y, m + 1, 0).getDate(), tdy = ymd(new Date());
+      document.getElementById('mL').innerText = `${M[m]} ${y}`;
+      let h = '<div class="wrap"><table><thead><tr><th class="st">Техника</th>';
+      for (let d = 1; d <= days; d++) {
+        const o = new Date(y, m, d), s = ymd(o), w = o.getDay();
+        h += `<th class="dh ${w===0||w===6?'wk':''} ${s===tdy?'tdy':''}"><div>${d}</div><div style="opacity:.6">${D[w]}</div></th>`;
+      }
+      h += '</tr></thead><tbody>';
+      st.eq.forEach(e => {
+        h += `<tr><td class="st"><div class="tname">${e.name}</div><div class="tplate">${e.plate||''}</div></td>`;
+        for (let d = 1; d <= days; d++) {
+          const s = ymd(new Date(y, m, d)), b = st.bk.find(x => x.techId === e.id && s >= x.start && s <= x.end);
+          h += b ? `<td class="dc ${s===tdy?'tdy':''}"><div class="busy" onclick="info('${b.id}')">●</div></td>`
+                 : `<td class="dc ${s===tdy?'tdy':''}"><div class="free" onclick="qB('${e.id}','${s}')"></div></td>`;
+        }
+        h += '</tr>';
+      });
+      document.getElementById('box').className = '';
+      document.getElementById('box').innerHTML = h + '</tbody></table></div>';
     }
 
-    function toYMD(date) {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
-    }
+    window.info = id => {
+      const b = st.bk.find(x => x.id === id); if (!b) return;
+      const e = st.eq.find(x => x.id === b.techId);
+      st.id = b.id;
+      document.getElementById('iT').innerText = e ? e.name : 'Бронь';
+      document.getElementById('iO').innerText = b.title;
+      document.getElementById('iP').innerText = `${b.start} — ${b.end}`;
+      document.getElementById('iA').innerText = b.author;
+      document.getElementById('iM').classList.add('on');
+    };
 
-    function renderCalendar() {
-      const year = state.currentDate.getFullYear();
-      const month = state.currentDate.getMonth();
-      document.getElementById('monthLabel').innerText = `${MONTHS_RU[month]} ${year}`;
+    window.qB = (tid, s) => {
+      document.getElementById('tS').value = tid;
+      document.getElementById('sD').value = s;
+      document.getElementById('eD').value = s;
+      document.getElementById('tI').value = '';
+      document.getElementById('bM').classList.add('on');
+    };
 
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const todayStr = toYMD(new Date());
+    document.getElementById('pM').onclick = () => { st.dt.setMonth(st.dt.getMonth() - 1); draw(); };
+    document.getElementById('nM').onclick = () => { st.dt.setMonth(st.dt.getMonth() + 1); draw(); };
+    document.getElementById('oB').onclick = () => qB(st.eq[0]?.id || '', ymd(new Date()));
 
-      let html = '<div class="timeline-wrapper"><table><thead><tr>';
-      html += '<th class="sticky-col">Техника</th>';
+    document.getElementById('svB').onclick = async () => {
+      const techId = document.getElementById('tS').value, start = document.getElementById('sD').value, end = document.getElementById('eD').value;
+      const title = document.getElementById('tI').value.trim() || 'Без названия';
+      const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+      const author = u ? `${u.first_name || ''} ${u.last_name || ''}`.trim() : 'Сотрудник';
+      if (!start || !end || end < start) return msg('Проверьте даты');
+      const b = document.getElementById('svB'); b.disabled = true; b.innerText = '...';
+      try {
+        const r = await fetch(API, { method: 'POST', body: JSON.stringify({ action: 'add', techId, start, end, title, author }) });
+        const res = await r.json();
+        if (res.status === 'ok') { cM('bM'); await load(); } else msg(res.message || 'Ошибка');
+      } catch (e) { msg('Ошибка сети'); }
+      b.disabled = false; b.innerText = 'Сохранить';
+    };
 
-      for (let d = 1; d <= daysInMonth; d++) {
-        const dateObj = new Date(year, month, d);
-        const dateStr = toYMD(dateObj);
-        const dayOfWeek = dateObj.getDay();
-        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    document.getElementById('dlB').onclick = async () => {
+      const b = document.getElementById('dlB'); b.disabled = true; b.innerText = '...';
